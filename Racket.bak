@@ -1,0 +1,49 @@
+#lang scheme
+
+;Day and Date validation
+
+(define (leap-year? year)
+  (cond ((eq? (modulo year 400) 0) #t)
+        ((eq? (modulo year 100) 0) #f)
+        ((eq? (modulo year 4) 0) #t)
+        (else #f)))
+
+;needs helpers
+(define (day? year month date)
+  (day-name (modulo
+             (+ (/ (modulo year 100) 4)
+                (+ date
+                   (+ (month-table month)
+                      (century-table (find-century year)))))
+             7)))
+
+;helpers
+(define (month-table month)
+  (cond ((equal? month (or "April" "July")) 0)
+        ((equal? month (or "September" "December")) 1)
+        ((equal? month "June") 2)
+        ((equal? month (or (or "March" "February") "November")) 3)
+        ((equal? month "August") 4)
+        ((equal? month "May") 5)
+        ((equal? month (or "January" "October")) 6)))
+        ;(else #f))
+                                  
+(define (century-table century)
+  (modulo century 7))
+
+(define (find-century year)
+  (floor->exact(/ (modulo year 1000) 100)))
+                                                 
+(define (day-name day)
+  (list-ref '("Sat" "Sun" "Mon" "Tue" "Wed" "Thu" "Fri") day))
+
+;SanityTests
+(day-name 0)
+(day-name 6)
+(leap-year? 2000)
+(leap-year? 100)
+(month-table "June")
+(find-century 1400)
+(century-table (find-century 2000))
+(day? 2000 "January" 1)
+(day? 1307 "October" 13)
