@@ -36,37 +36,76 @@
 ;			<Minute>
 ;	 )
 ;Calender
-(define (cal) 
-           (list             
-                "Some Calender Name"
-                "Some Calender Description"
-                (list
-                     (list
-                          "Some Appointment description"
-                          (list 2001 9 11 13 37)
-                          (list 2001 9 12 13 37)
-                     )
-                     (list
-                          "Some Second Appointment"
-                          (list 2002 1 1 13 37)
-                          (list 2002 1 2 13 37)
-                     )
-                )
-              
-               (list
-                    "Some Other Calender Name"
-                    "Some Other Calender Description"
-                    (list
-                         (list
-                              "Some Other Appointment Description"
-                              (list 2002 4 20 4 20)
-                              (list 2002 4 21 13 37)
+
+(define (cal1)
+  (build-cal "Some Calender Name" "Some Calender Desc"
+             (list (build-appointment "Some Appointment Descript"
+                                (build-timeframe
+                                   (build-datetime 2016 10 28 13 37)
+                                   (build-datetime 2016 10 28 16 30)))
+                   (build-appointment "Some Second Appointment"
+                                (build-timeframe
+                                   (build-datetime 2016 10 28 17 00)
+                                   (build-datetime 2016 10 30 12 00)))
+                   )
+             (list (build-cal "Some Other Calender" "A calender within a calender"
+                        (list (build-appointment "Some secret appointment"
+                                           (build-timeframe
+                                               (build-datetime 2001 9 11 11 37)
+                                               (build-datetime 2001 9 11 13 37)))
                          )
-                    )
-              )
-           )
-       
-)
+                        )
+             )
+  )
+)     
+
+;required functionality
+(define (appointments-overlap? ap1 ap2)
+  (if (and (before? (from (timeframe ap1)) (to (timeframe ap2)))
+           (before? (from (timeframe ap2)) (to (timeframe ap1))))
+      #t
+      #f))
+
+(define (calendars-overlap? cal1 cal2)
+  (with-calendar cal1
+    (lambda (cal1)
+      (with-calendar cal2
+        (lambda (cal2)
+          (let* ([apl1 (applist cal1)]
+                 [apl2 (applist cal2)])
+            (ormap 
+               (lambda (cartplist)
+                 (apply appointments-overlap? cartplist)
+               )
+               (cartesian-product apl1 apl2)
+            )))))))
+               
+             ;  (with-appointment apl2
+              ;   (ormap
+               ;   (lambda (appoint2)
+                ;    (appointments-overlap? appoint1 appoint2)
+                 ;   )))))))))))
+
+(define (flatten-calendar cal)
+  (with-calendar cal (lambda (cal)
+        (build-cal
+         (cal-name cal)
+         (cal-descript cal)
+         (apply append
+                (applist cal)
+                (map (lambda (x)
+                     (applist (flatten-calendar x)))
+                (subcal cal))
+         )
+         ))))
+                                
+            
+                                       
+
+                        
+   ;o,l,o,l,ao
+
+
 ;Builders
 (define (build-datetime year month day hour minute)
   (if (datetime? (list year month day hour minute))
@@ -79,14 +118,49 @@
            (before? from-datetime to-datetime))                      
       (list from-datetime to-datetime)
       (error "timeframe build fail")))
-;(define (build-appointment descript timeframe)
-;(define (build-cal title descript subcal appointment)
+
+(define (build-appointment descript timeframe)
+  (if (and (string? descript)
+           (timeframe? timeframe))
+      (list descript timeframe)
+      (error "appointment build fail")))
+
+(define (build-cal title descript [appointments '()] [subcals '()])
+  (if (and (string? title)
+           (string? descript)
+           (andmap appointment? appointments)
+           (if (not (eq? subcals '())) (andmap calendar? subcals) #t))
+      (list title descript appointments subcals)
+      (error "cal build fail")))
 
 ;Data Constructs Validation
-;(define (cal? cal)
-;  (match cal
-;    [(list cal-name cal-desc appointments subcalender) ()
-
+(define (with-calendar cal func)
+  (if (calendar? cal)
+	(func cal)
+	(error "Not a calendar")
+	)
+)
+                                         
+(define (with-appointment appointment func)
+  (if (appointment? appointment)
+        (func appointment)
+        (error "not an appointment")
+      )
+  )
+                                         
+(define (with-timeframe timeframe func)
+  (if (timeframe? timeframe)
+        (func timeframe)
+        (error "not a timeframe")
+      )
+  )
+                                         
+(define (with-datetime datetime func)
+  (if (datetime? datetime)
+        (func datetime)
+        (error "not a datetime")
+      )
+  )                                           
 (define (datetime? datetime)
   (match datetime
     [(list year month day hour minute) (and (date? year month day)
@@ -105,24 +179,24 @@
                                          (timeframe? timeframe))]
           [_ #f]))
 
-(define (calender? cal)
+(define (calendar? cal)
   (match cal
     [(list cal-name cal-desc appoint cal) (and (string? cal-name)
                                                (string? cal-desc)
                                                (andmap appointment? appoint)
-                                               (andmap calender? cal))]
+                                               (andmap calendar? cal))]
     [_ #f]))
 
 (define (before? from to)
-  (if ( <= (get-year from) (get-year to))
+  (if ( <= (year from) (year to))
       ( <=
-      (+ (day-to-min (get-day from))
-         (+ (hour-to-min (get-hour from))
-            (day-to-min (days-in-month (get-year from) (get-month from)))))  
-      (+ (day-to-min (get-day to))
-          (+ (hour-to-min (get-hour to))
-             (day-to-min (days-in-month (get-year to) (get-month to)))))
-      )
+        (+ (day-to-min (day from))
+           (+ (hour-to-min (hour from))
+              (day-to-min (days-in-month (year from) (month from)))))  
+        (+ (day-to-min (day to))
+           (+ (hour-to-min (hour to))
+              (day-to-min (days-in-month (year to) (month to)))))
+        )
       #f))
 ;convert to minutes
 (define (hour-to-min hour)
@@ -130,22 +204,57 @@
 (define (day-to-min day)
   (* day 1440))
 ;getters
-(define (get-minute datetime)
-  (list-ref datetime 4))
+(define (minute datetime)
+  (with-datetime datetime (lambda (x) 
+                            (list-ref x 4))))
 
-(define (get-hour datetime)
-  (list-ref datetime 3))
+(define (hour datetime)
+  (with-datetime datetime (lambda (x)
+                            (list-ref x 3))))
 
-(define (get-day datetime)
-  (list-ref datetime 2))
+(define (day datetime)
+  (with-datetime datetime (lambda (x)
+                            (list-ref x 2))))
 
-(define (get-month datetime)
-  (list-ref datetime 1))
+(define (month datetime)
+  (with-datetime datetime (lambda (x)
+                            (list-ref x 1))))
 
-(define (get-year datetime)
-  (list-ref datetime 0))
+(define (year datetime)
+  (with-datetime datetime (lambda (x)
+                                  (list-ref x 0))))
 
-  
+(define (from timeframe)
+  (with-timeframe timeframe (lambda (x)
+                              (list-ref x 0))))
+
+(define (to timeframe)
+  (with-timeframe timeframe (lambda (x)
+                              (list-ref x 1))))
+
+(define (applist cal)
+  (with-calendar cal (lambda (x)
+                       (list-ref x 2))))
+
+(define (timeframe appointment)
+  (with-appointment appointment (lambda (x)
+                                  (list-ref x 1))))
+
+(define (app-descript appointment)
+  (with-appointment appointment (lambda (x)
+                                  (list-ref x 0))))
+
+(define (cal-name cal)
+  (with-calendar cal (lambda (x)
+                       (list-ref x 0))))
+
+(define (cal-descript cal)
+  (with-calendar cal (lambda (x)
+                       (list-ref x 1))))
+
+(define (subcal cal)
+  (with-calendar cal (lambda (x)
+                       (list-ref x 3))))
 ;Validation helpers
 (define (hour? hour)
   (and (>= hour 0) (<= hour 24)))
@@ -181,7 +290,7 @@
 
 ;Uses a formula to determine which day a given date is,
 ;works on gregorian calender its use (approx 1750)
-(define (day year month date)
+(define (find-day year month date)
   (day-name (modulo 
              (+ (quotient (modulo year 100) 4)
                 (+ (modulo year 100)
@@ -255,12 +364,12 @@
 (month-table "October" 2005)
 (find-century 1400)
 (century-table (find-century 2000))
-(day 2000 "January" 1)
-(day 2000 1 1)
-(day 2016 10 28)
-(day 2016 9 1)
-(day 2016 11 1)
-(day 2016 12 1)
+(find-day 2000 "January" 1)
+(find-day 2000 1 1)
+(find-day 2016 10 28)
+(find-day 2016 9 1)
+(find-day 2016 11 1)
+(find-day 2016 12 1)
 (hour? 20)
 (hour? 25)
 (days-in-month 2016 2)
@@ -273,12 +382,14 @@
 (date? 2001 2 29)
 (datetime? (list 2016 2 29 13 37))
 (datetime? (list 2011 2 25 13 37))
-(trace timeframe?)
-(trace datetime?)
-(trace date?)
-(trace time?)
 (timeframe? (list (list 2016 2 29 13 37) (list 2011 2 25 13 37)))
 ;(build-datetime 2016 "october" 28 16 30)
 (build-datetime 2016 10 28 16 30)
 (before? (list 2016 2 29 13 37) (list 2011 2 25 13 37))
 (before? (list 2016 2 25 13 37) (list 2016 2 25 13 37))
+(cal1)
+(applist (cal1))
+(appointments-overlap? (list-ref (applist (cal1)) 0) (list-ref (applist (cal1)) 0))
+(appointments-overlap? (list-ref (applist (cal1)) 1) (list-ref (applist (cal1)) 0))
+(calendars-overlap? (cal1) (cal1))
+(flatten-calendar (cal1))
