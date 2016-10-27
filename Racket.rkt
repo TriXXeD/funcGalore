@@ -36,7 +36,18 @@
 ;			<Minute>
 ;	 )
 ;Calender
-
+(define (test-ap1)
+  (build-appointment "Some Test Appointment"
+                     (build-timeframe
+                      (build-datetime 2016 1 1 12 24)
+                      (build-datetime 2016 1 1 15 27)
+                     )))
+(define (test-ap2)
+  (build-appointment "Some Test Appointment"
+                     (build-timeframe
+                      (build-datetime 2020 1 1 12 24)
+                      (build-datetime 2020 1 1 15 27)
+                     )))
 (define (cal1)
   (build-cal "Some Calender Name" "Some Calender Desc"
              (list (build-appointment "Some Appointment Descript"
@@ -66,6 +77,8 @@
       #t
       #f))
 
+;uses cartesian product to generate a list of each pair of appointments
+;then uses apply to call appointments overlap on the list values
 (define (calendars-overlap? cal1 cal2)
   (with-calendar cal1
     (lambda (cal1)
@@ -97,15 +110,24 @@
                      (applist (flatten-calendar x)))
                 (subcal cal))
          )
-         ))))
+))))
                                 
-            
-                                       
+(define (find-appointments cal pred)
+  (with-calendar cal (lambda (cal)
+       (filter pred (applist (flatten-calendar cal)))
+  )))
 
-                        
-   ;o,l,o,l,ao
+;uses find-appointments to filter for the predicate
+;then uses the starts-frist helper to check which starts first
+(define (find-first-appointment cal pred)
+  (with-calendar cal (lambda (cal)
+       (car (sort (find-appointments cal pred) starts-first?)))))
 
-
+;Simply find-first but with reverse before using car to evaluate
+(define (find-last-appointment cal pred)
+  (with-calendar cal (lambda (cal)
+        (car (reverse (sort (find-appointments cal pred) starts-first?))))))
+                             
 ;Builders
 (define (build-datetime year month day hour minute)
   (if (datetime? (list year month day hour minute))
@@ -198,6 +220,10 @@
               (day-to-min (days-in-month (year to) (month to)))))
         )
       #f))
+
+(define (starts-first? ap1 ap2)
+  (before? (from (timeframe ap1)) (from (timeframe ap2)))
+)
 ;convert to minutes
 (define (hour-to-min hour)
   (* hour 60))
@@ -356,6 +382,92 @@
 ;HTML Generation
 ;body, head, div, br, p, tb, ul, li, h1, h2, h3, ol
 
+(define (list-between cut lst)
+  (match lst
+      ['() (list cut)]
+      [(list x xs ...) (append (list cut x) (list-between cut xs))]
+  ))
+
+(define (list-to-strings cut lst)
+  (apply string-append (list-between cut lst)))
+
+(define (tag name param children)
+  (string-append
+   (format "<~A~A>" name (list-to-strings "" param))
+   (list-to-strings "" (flatten children))
+   (format "</~A>" name)))
+
+(define (html . children)
+  (tag "html" '() children)
+  )
+
+(define (body . children)
+  (tag "body" '() children)
+  )
+
+(define (head . children)
+  (tag "head" '() children)
+  )
+
+(define (title . children)
+  (tag "title" '() children)
+  )
+
+(define (h1 . children)
+  (tag "h1" '() children)
+  )
+
+(define (h2 . children)
+  (tag "h1" '() children))
+
+(define (div . children)
+  (tag "div" '() children)
+  )
+
+(define (ul . children)
+  (tag "ul" '() children)
+  )
+
+(define (li . children)
+  (tag "li" '() children)
+  )
+
+
+(define (left-pad-helper num fill)
+  (cond
+    [(<= num 0) ""]
+    [else (string-append (left-pad-helper (- num 1) fill) fill)]
+    ))
+
+(define (left-pad fill len str)
+  (string-append (left-pad-helper (- len (string-length str)) fill) str))
+
+(define (display-datetime datetime)
+  (format "~a ~a/~a/~a - ~a:~a"
+          (find-day (year datetime) (month datetime) (day datetime))
+          (left-pad "0" 2 (number->string (day datetime)))
+          (left-pad "0" 2 (number->string (month datetime)))
+          (left-pad "0" 4 (number->string (year datetime)))
+          (left-pad "0" 2 (number->string (hour datetime)))
+          (left-pad "0" 2 (number->string (minute datetime)))
+  ))
+
+(define (display-appointment app)
+  (li (app-descript app) " starts at " (display-datetime (from (timeframe app)))
+      " ends at " (display-datetime (to (timeframe app)))))
+
+(define (display-applist aplist)
+  (ul (map display-appointment (sort aplist starts-first?))))
+
+(define (display-calendar cal)
+  (div
+   (h1 (cal-name cal))
+   (h2 (cal-descript cal))
+   (display-applist (applist (flatten-calendar cal)))))
+
+
+       
+
 ;SanityTests
 (day-name 0)
 (day-name 6)
@@ -393,3 +505,12 @@
 (appointments-overlap? (list-ref (applist (cal1)) 1) (list-ref (applist (cal1)) 0))
 (calendars-overlap? (cal1) (cal1))
 (flatten-calendar (cal1))
+(display "stap \n")
+(find-appointments (cal1) (lambda (x) with-calendar))
+(trace starts-first?)
+(starts-first? (test-ap1) (test-ap2))
+(find-first-appointment (cal1) (lambda (x) with-calendar))
+(find-last-appointment (cal1) (lambda (x) with-calendar))
+(trace build-cal)
+(trace build-appointment)
+(display-calendar (cal1))
