@@ -36,6 +36,14 @@
 ;			<Minute>
 ;	 )
 ;Calender
+(define (smallcal)
+  (build-cal "A small Calendar" "Purpose: testing"
+             (list (build-appointment "Small appointment for small calendar"
+                                      (build-timeframe
+                                       (build-datetime 2016 10 28 0 35)
+                                       (build-datetime 2016 10 28 0 40)
+                                       )))))
+                   
 (define (test-ap1)
   (build-appointment "Some Test Appointment"
                      (build-timeframe
@@ -111,11 +119,114 @@
                 (subcal cal))
          )
 ))))
-                                
+
+;uses the high-order function filter with a given predicate
 (define (find-appointments cal pred)
   (with-calendar cal (lambda (cal)
        (filter pred (applist (flatten-calendar cal)))
   )))
+
+;uses append to add an appointment to the list of appointments
+(define (calendar-add-app cal app)
+  (with-appointment app (lambda (app)
+    (with-calendar cal (lambda (cal)
+         (build-cal
+          (cal-name cal)
+          (cal-descript cal)
+          (append
+                 (applist cal)
+                 (list app)
+          )
+          (subcal cal)               
+           ))))))
+
+(define (remove-app-helper cal pred)
+  (with-calendar cal (lambda (cal)
+                       (filter (negate pred) (applist cal)))))
+(define (remove-subcal-helper cal pred)
+  (with-calendar cal (lambda (cal)
+                        (filter (negate pred) (subcal cal)))))
+  
+(define (calendar-remove-app cal pred)
+  (with-calendar cal (lambda (cal)
+        (build-cal
+         (cal-name cal)
+         (cal-descript cal)
+         (remove-app-helper cal pred)
+         (subcal cal)
+         ;(map (lambda (x)
+          ;      (remove-app-helper (applist x) pred))
+           ;   (subcal cal))
+        ))))
+(define (calendar-remove-subcal cal pred)
+  (with-calendar cal (lambda (cal)
+        (build-cal
+         (cal-name cal)
+         (cal-descript cal)
+         (applist cal)
+         (remove-subcal-helper cal pred)
+        ))))
+;(define (calendar-remove-app cal pred)
+ ; (with-calendar cal (lambda (cal)
+  ;      (match (subcal cal)
+   ;       [(list x xs ...) (calendar-remove-app xs pred) (negate (filter pred (applist x)))]
+    ;      [(list x) (negate (filter pred (applist (x))))]
+     ;   )
+      ;                 )))
+
+;uses append to add subcal to the list of subcalls
+(define (calendar-add-subcal oldcal newcal)
+  (with-calendar oldcal (lambda (oldcal)
+       (with-calendar newcal (lambda (newcal)
+             (build-cal
+              (cal-name oldcal)
+              (cal-descript oldcal)
+              (applist oldcal)             
+              (append
+               (subcal oldcal)
+               (list newcal)
+               )
+             ))))))
+
+
+
+;(map (lambda (x)
+;                     (applist (flatten-calendar x)))
+
+;(map (lambda (x)
+;                    (applist (flatten-calendar x)))
+;dat map syntax tho
+(define (present-calendar-html cal from-time to-time)
+ ; (with-calendar cal (lambda (cal)
+  ; (with-datetime from-time (from-time)
+   ; (with-datetime to-time (to-time)
+  (display-calendar
+   (filter (and (before? (from (timeframe (applist cal))) from-time)
+                         (before? to-time (to (timeframe (applist cal)))))
+           (flatten-calendar cal))
+   ))
+
+   ;(calendar-remove-app (flatten-calendar cal) (lambda (x) (and (before? (from (timeframe (applist x))) from-time)
+    ;                                                            (before? to-time (to (timeframe (applist x))))
+    ;                                             )))))
+
+
+;(define (cal-remove-help lst curindex index res)
+ ; (match lst
+  ; [(list x xs ...) (cal-remove-help xs (+ curindex 1) index (append x res))]
+   ; [_ res]
+    ;))   
+
+;(define (calendar-remove-subcal cal subcalindex)
+ ; (with-calendar cal (lambda (cal)
+  ;                     (build-cal
+   ;                     (cal-name cal)
+    ;                    (cal-descript cal)
+     ;                   (applist cal)
+      ;                  (append
+       ;                  (cal-remove-help (subcal cal) 0 subcalindex '())
+        ;                )))))
+                         
 
 ;uses find-appointments to filter for the predicate
 ;then uses the starts-frist helper to check which starts first
@@ -511,6 +622,14 @@
 (starts-first? (test-ap1) (test-ap2))
 (find-first-appointment (cal1) (lambda (x) with-calendar))
 (find-last-appointment (cal1) (lambda (x) with-calendar))
-(trace build-cal)
-(trace build-appointment)
+
 (display-calendar (cal1))
+
+
+(calendar-add-app (cal1) (test-ap1))
+
+(display "stap \n")
+(calendar-add-subcal (cal1) (smallcal))
+(calendar-remove-app (cal1) (lambda (x) with-calendar))
+(calendar-remove-subcal (cal1) (lambda (x) with-calendar))
+;(present-calendar-html (cal1) (list 2015 1 1 11 11) (list 2017 1 1 11 11))
