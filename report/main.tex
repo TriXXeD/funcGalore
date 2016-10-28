@@ -1,0 +1,105 @@
+%
+% deliverable
+% 
+% Licensed under MIT License
+%
+% Page creation engine
+\documentclass[11pt,a4paper,article,oneside]{memoir}
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage[T1]{fontenc}
+\usepackage{microtype}
+\usepackage{titling}
+\usepackage[pagestyles]{titlesec}
+\titleformat{\chapter}[hang]{\huge\bfseries}{}{0pt}{}[
+    \vspace{-0.5ex}%
+    \rule{\textwidth}{0.5pt}%
+    \vspace{-1.5cm}
+]
+\renewcommand{\thechapter}{\Roman{chapter}}
+\renewcommand{\thesection}{\thechapter.\Roman{section}} 
+\renewcommand{\thesubsection}{\thechapter.\thesection.\Roman{subsection}}
+
+\pretitle{\vspace{-1cm}\centering\HUGE\bfseries\scshape}
+\posttitle{\\
+\vspace{-20pt}
+\rule{10em}{0.5pt}\\
+\vspace{20pt}}
+\preauthor{\centering\large}
+\postauthor{\\\vspace{18pt}}
+\predate{\centering\large}
+\postdate{\\}
+
+\setulmarginsandblock{3cm}{3cm}{*}
+\setlrmarginsandblock{3.5cm}{3.5cm}{*}
+\checkandfixthelayout%
+
+% Meta-data
+\title{First Programming Paradigms Miniproject}
+\author{Marc Tom Thorgersen}
+\date{October 28, 2016}
+
+% Main modules
+\usepackage{url}      % URL
+\usepackage{hyperref} % Links
+\usepackage{graphicx} % Pictures
+\usepackage{wrapfig}  % In-line Pictures
+\usepackage{verbatim} % Code
+\usepackage{moreverb} % Encoding
+\usepackage{listings} % Code
+\usepackage{xcolor}    % Highlight
+\usepackage{multicol} % Multi Column
+\usepackage[inline,shortlabels]{enumitem}
+\usepackage{csquotes}
+
+% Document
+\begin{document}
+\maketitle
+\section{Status}
+First let us review the status of the program i have written, the following is a description of each of the functionalities we were asked to implement.
+They are listed in the order i decided to develop them, rather than the order they were listed in the assignment.
+\begin{description}
+    \item [(appointments-overlap? ap1 ap2): Status 100 \% complete]
+    
+
+    \item [(calendars-overlap?): Status 100 \% complete]
+
+    \item [(flatten-calendar cal): Status 100 \% complete]
+
+    \item [(find-appointments cal pred): Status 100 \% complete]
+
+    \item [(find-first-appointment cal pred): Status 100 \% complete]
+
+    \item [(find-last-appointment cal pred): Status 100 \% complete]
+
+    \item [(calendar-add-subcal) and (calendar-add-appointment): Status 100 \% complete]
+
+    \item [(calendar-remove-subcal) and (calendar-remove-appointment): Status 100 \% complete]
+
+    \item [(present-calendar-html cal from-time to-time): Status 75 \% complete]
+
+\end{description}
+\section{Overview}
+\chaper{Relections}
+\section{Functional relative to Imperative and Object Oriented programming}
+\section{Strength and Weaknesses}
+Concurrency, Math, Removes the larger overhead of many OOP languages
+Free of side effects(debugging was quite trivial with (trace)) --> concurrency
+
+Weak
+Very different - not widespread
+Packageability
+Portability - dominance of c/java means most systems can adapt them
+Libraries - software reuse demand supply
+Compatability
+\section{Dynamic Typing}
+% Chapter files listing
+
+\newpage
+
+% End of chapter files listing
+
+% Bibliography
+%\bibliographystyle{unsrt}
+%\bibliography{../src/refs}
+\end{document}

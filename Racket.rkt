@@ -1,3 +1,4 @@
+;Marc Tom Thorgersen - mthorg13@student.aau.dk
 #lang scheme
 (require racket/trace)
 ;Cal Layout
@@ -528,8 +529,8 @@
   (tag "h1" '() children)
   )
 
-(define (h2 . children)
-  (tag "h1" '() children))
+(define (h3 . children)
+  (tag "h3" '() children))
 
 (define (div . children)
   (tag "div" '() children)
@@ -573,7 +574,7 @@
 (define (display-calendar cal)
   (div
    (h1 (cal-name cal))
-   (h2 (cal-descript cal))
+   (h3 (cal-descript cal))
    (display-applist (applist (flatten-calendar cal)))))
 
 
