@@ -1,48 +1,11 @@
 ;Marc Tom Thorgersen - mthorg13@student.aau.dk
 #lang scheme
-(require racket/trace)
-;Cal Layout
-;	Calender:
-;	'(
-;		<Name>
-;		<Descrip>
-;		'(
-;				<Appointment>*
-;		 )
-;		'(
-;				<Cal>*
-;		 )
-;	 )
-;
-;	App:
-;	'(
-;                <descri>
-;                <timeframe>
-;			
-;	 )
-;
-;
-;	Timeframe:
-;	'(
-;			<date> (FROM)
-;			<date> (TO)
-;	 )
-;
-;       Date:
-;       '(
-;			<Year>
-;			<Month>
-;			<Day>
-;			<Hour>
-;			<Minute>
-;	 )
-;Calender
 (define (smallcal)
   (build-cal "A small Calendar" "Purpose: testing"
              (list (build-appointment "Small appointment for small calendar"
                                       (build-timeframe
-                                       (build-datetime 2016 10 28 0 35)
-                                       (build-datetime 2016 10 28 0 40)
+                                       (build-datetime 2017 10 28 0 35)
+                                       (build-datetime 2017 10 28 0 40)
                                        )))))
                    
 (define (test-ap1)
@@ -79,6 +42,31 @@
   )
 )     
 
+(define (mastercalendar)
+  (build-cal "Late October Calendar" "A Calendar for the last couple of weeks in October"
+             (list (build-appointment "PP Exam Day1"
+                                      (build-timeframe
+                                       (build-datetime 2016 10 26 08 15)
+                                       (build-datetime 2016 10 26 16 00)
+                                      ))
+                   (build-appointment "PP Exam Day2"
+                                      (build-timeframe
+                                       (build-datetime 2016 10 27 08 15)
+                                       (build-datetime 2016 10 27 16 00)
+                                      ))
+                   (build-appointment "PP Exam Day3"
+                                      (build-timeframe
+                                       (build-datetime 2016 10 28 08 15)
+                                       (build-datetime 2016 10 28 16 00)
+                                      ))
+                   )
+             (list (build-cal "Hidden Weekend Calendar" "Illuminati party hard"
+                              (list (build-appointment "FLAN"
+                                                       (build-timeframe
+                                                        (build-datetime 2016 10 28 17 00)
+                                                        (build-datetime 2016 10 30 12 00)
+                                                        )))))))
+
 ;required functionality
 (define (appointments-overlap? ap1 ap2)
   (if (and (before? (from (timeframe ap1)) (to (timeframe ap2)))
@@ -101,12 +89,6 @@
                )
                (cartesian-product apl1 apl2)
             )))))))
-               
-             ;  (with-appointment apl2
-              ;   (ormap
-               ;   (lambda (appoint2)
-                ;    (appointments-overlap? appoint1 appoint2)
-                 ;   )))))))))))
 
 (define (flatten-calendar cal)
   (with-calendar cal (lambda (cal)
@@ -155,10 +137,8 @@
          (cal-descript cal)
          (remove-app-helper cal pred)
          (subcal cal)
-         ;(map (lambda (x)
-          ;      (remove-app-helper (applist x) pred))
-           ;   (subcal cal))
         ))))
+
 (define (calendar-remove-subcal cal pred)
   (with-calendar cal (lambda (cal)
         (build-cal
@@ -167,13 +147,6 @@
          (applist cal)
          (remove-subcal-helper cal pred)
         ))))
-;(define (calendar-remove-app cal pred)
- ; (with-calendar cal (lambda (cal)
-  ;      (match (subcal cal)
-   ;       [(list x xs ...) (calendar-remove-app xs pred) (negate (filter pred (applist x)))]
-    ;      [(list x) (negate (filter pred (applist (x))))]
-     ;   )
-      ;                 )))
 
 ;uses append to add subcal to the list of subcalls
 (define (calendar-add-subcal oldcal newcal)
@@ -206,27 +179,6 @@
                          (before? to-time (to (timeframe (applist cal)))))
            (flatten-calendar cal))
    ))
-
-   ;(calendar-remove-app (flatten-calendar cal) (lambda (x) (and (before? (from (timeframe (applist x))) from-time)
-    ;                                                            (before? to-time (to (timeframe (applist x))))
-    ;                                             )))))
-
-
-;(define (cal-remove-help lst curindex index res)
- ; (match lst
-  ; [(list x xs ...) (cal-remove-help xs (+ curindex 1) index (append x res))]
-   ; [_ res]
-    ;))   
-
-;(define (calendar-remove-subcal cal subcalindex)
- ; (with-calendar cal (lambda (cal)
-  ;                     (build-cal
-   ;                     (cal-name cal)
-    ;                    (cal-descript cal)
-     ;                   (applist cal)
-      ;                  (append
-       ;                  (cal-remove-help (subcal cal) 0 subcalindex '())
-        ;                )))))
                          
 
 ;uses find-appointments to filter for the predicate
@@ -267,7 +219,7 @@
       (list title descript appointments subcals)
       (error "cal build fail")))
 
-;Data Constructs Validation
+;Data Constructs Validation - the following functions are used as an adhoc type system
 (define (with-calendar cal func)
   (if (calendar? cal)
 	(func cal)
@@ -341,7 +293,7 @@
   (* hour 60))
 (define (day-to-min day)
   (* day 1440))
-;getters
+;The following functions are used to extract elements in various lists depending on the data representation used
 (define (minute datetime)
   (with-datetime datetime (lambda (x) 
                             (list-ref x 4))))
@@ -427,7 +379,7 @@
         (else #f)))
 
 ;Uses a formula to determine which day a given date is,
-;works on gregorian calender its use (approx 1750)
+;works on gregorian calender since its use (approx 1600)
 (define (find-day year month date)
   (day-name (modulo 
              (+ (quotient (modulo year 100) 4)
@@ -633,4 +585,7 @@
 (calendar-add-subcal (cal1) (smallcal))
 (calendar-remove-app (cal1) (lambda (x) with-calendar))
 (calendar-remove-subcal (cal1) (lambda (x) with-calendar))
-;(present-calendar-html (cal1) (list 2015 1 1 11 11) (list 2017 1 1 11 11))
+(subcal (cal1))
+(calendars-overlap? (cal1) (smallcal))
+(display "\n \n \n \n")
+(display-calendar (mastercalendar))
